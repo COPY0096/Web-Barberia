@@ -271,7 +271,7 @@ function paginaAgil() {
     if (newCita) {
       console.log(`cita disponible para fecha  ${newCita.fecha.toString()}`);
 
-      cita.fecha = newCita.fecha.toISODate();
+      cita.fecha = newCita.fecha.toISODate(`${cita.fecha}T${cita.hora}`);
       document.querySelector("#fecha").value = cita.fecha;
 
       cita.hora = newCita.fecha.toFormat("HH:mm");
@@ -362,15 +362,34 @@ function seleccionarFecha() {
 
 function seleccionarHora() {
   const inputHora = document.querySelector("#hora");
-  inputHora.addEventListener("input", function (e) {
+  inputHora.addEventListener("input", async function (e) {
     const horaCita = e.target.value;
     const hora = horaCita.split(":")[0];
 
+    let fecha_selected = document.querySelector("#fecha").value
+    if (!fecha_selected){
+      e.target.value="";
+      mostrarAlerta("Por favor selecciona una fecha primero", "error", ".formulario");
+      return;
+    }
+
+    let newCita = {
+      fecha: DateTime.fromISO(`${fecha_selected}T${horaCita}`),
+      servicios: cita.servicios.length,
+    }
+    
+
+    let citas = await buscarCitas();
+    console.log(horaCita);
     
     if (hora < 8 || hora > 18) {
       e.target.value = "";
       mostrarAlerta("Hora No Válida", "error", ".formulario");
-    } else {
+    } else if (!checkCita(citas,newCita)){
+      e.target.value = "";
+      mostrarAlerta("Hora no disponible", "error", ".formulario");
+    }else{
+
       cita.hora = e.target.value;
 
       // console.log(cita);
