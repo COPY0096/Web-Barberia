@@ -206,6 +206,7 @@ function checkCita(citas, newCita) {
 
 function determine_cita_agil(num_servicios, citas) {
   let today = DateTime.now();
+
   let startWork = DateTime.fromObject({
     year: today.year,
     month: today.month,
@@ -213,6 +214,7 @@ function determine_cita_agil(num_servicios, citas) {
     hour: 8,
     minute: 0,
   });
+
 
   let endWork = DateTime.fromObject({
     year: today.year,
@@ -227,16 +229,28 @@ function determine_cita_agil(num_servicios, citas) {
     servicios: num_servicios,
   };
 
+  // console.log(`
+  // en determine_cita_agil
+  //   la fecha es hoy es: ${today.toString()}
+  //   startWork: ${startWork.toString()}
+  //   endWork: ${endWork.toString()}
+  // `)
+
   let endWorkAux = endWork;
 
   for (let added_day = 0; added_day < 90; added_day++) {
     newCita.fecha = startWork.plus({ days: added_day });
     endWorkAux = endWork.plus({ days: added_day });
 
-    // console.log(`trying day ${added_day + 1} of 90`);
+    console.log(`trying day ${added_day + 1} of 90`);
 
     while (newCita.fecha < endWorkAux) {
-      if (checkCita(citas, newCita)) {
+      console.log(`
+      provando: 
+        newCita.fecha: ${newCita.fecha.toString()} < endWorkAux: ${endWorkAux.toString()}
+      `);
+      if (checkCita(citas, newCita) && newCita.fecha > today) {
+        // console.log(`paso: ${newCita} con fecha ${newCita.fecha.toString()}`)
         return newCita;
       }
       newCita.fecha = newCita.fecha.plus({ minutes: 10 });
@@ -247,7 +261,7 @@ function determine_cita_agil(num_servicios, citas) {
 
 function paginaAgil() {
   const paginaAgil = document.querySelector("#agil");
-  console.log(paginaAgil);
+  // console.log(paginaAgil);
   paginaAgil.addEventListener("click", async function () {
     let citas = await buscarCitas();
     // let listaCitas = [];
@@ -266,6 +280,10 @@ function paginaAgil() {
     // }
     // // console.log(listaCitas);
     // citas = listaCitas;
+
+    // console.log(`el numero de servicios es (${cita.servicios.length})`);
+
+    // console.log(citas);
 
     let newCita = determine_cita_agil(cita.servicios.length, citas);
     if (newCita) {

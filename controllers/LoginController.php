@@ -14,34 +14,44 @@ class LoginController {
             $auth = new Usuario($_POST);
             $alertas = $auth->validarLogin();
 
-            if(empty($alertas)) {
-                // Comprobar que exista el usuario
-                $usuario = Usuario::where('email', $auth->email);
+            $usuarioArray = Usuario::where('email', $auth->email);
 
-                if($usuario) {
-                    // Verificar el password
-                    if( $usuario->comprobarPasswordAndVerificado($auth->password) ) {
+            if (!empty($usuarioArray) && is_array($usuarioArray)) {
+                // Accede al objeto dentro del array
+                $usuario = $usuarioArray[0];
+                
+                // Verifica si $usuario es un objeto Usuario
+                if ($usuario instanceof Usuario) {
+                    // Verificar el password y si está verificado
+                    if ($usuario->comprobarPasswordAndVerificado($auth->password)) {
                         // Autenticar el usuario
                         session_start();
-
+            
                         $_SESSION['id'] = $usuario->id;
                         $_SESSION['nombre'] = $usuario->nombre . " " . $usuario->apellido;
                         $_SESSION['email'] = $usuario->email;
                         $_SESSION['login'] = true;
-
+            
                         // Redireccionamiento
-                        if($usuario->admin === "1") {
+                        if ($usuario->admin === "1") {
                             $_SESSION['admin'] = $usuario->admin ?? null;
                             header('Location: /admin');
                         } else {
                             header('Location: /cita');
                         }
+                    } else {
+                        // Password no coincide o usuario no verificado
+                        Usuario::setAlerta('error', 'Contraseña incorrecta o usuario no verificado');
                     }
                 } else {
+                    // $usuario no es una instancia de Usuario
                     Usuario::setAlerta('error', 'Usuario no encontrado');
                 }
-
+            } else {
+                // $usuarioArray no es un array válido
+                Usuario::setAlerta('error', 'Usuario no encontrado');
             }
+            
         }
 
         $alertas = Usuario::getAlertas();
@@ -160,6 +170,7 @@ class LoginController {
 
                     // Enviar el Email
                     $email = new Email($usuario->nombre, $usuario->email, $usuario->token);
+                    // debuguear($email);
                     $email->enviarConfirmacion();
 
                     // Crear el usuario
@@ -187,16 +198,34 @@ class LoginController {
         $token = s($_GET['token']);
         $usuario = Usuario::where('token', $token);
 
-        if(empty($usuario)) {
-            // Mostrar mensaje de error
-            Usuario::setAlerta('error', 'Token No Válido');
-        } else {
-            // Modificar a usuario confirmado
+        // if(empty($usuario)) {
+        //     // Mostrar mensaje de error
+        //     Usuario::setAlerta('error', 'Token No Válido');
+        // } else {
+        //     // Modificar a usuario confirmado
+        //     debuguear($usuario);
+        //     $usuario->confirmado = "1";
+        //     $usuario->token = null;
+        //     $usuario->guardar();
+        //     Usuario::setAlerta('exito', 'Cuenta Comprobada Correctamente');
+        // }
+        $usuarioArray = Usuario::where('token', $token);
+
+        if (!empty($usuarioArray) && is_array($usuarioArray)) {
+            // Accede al objeto dentro del array
+            $usuario = $usuarioArray[0];
+            
+            // Accede a las propiedades del objeto $usuario
             $usuario->confirmado = "1";
             $usuario->token = null;
             $usuario->guardar();
-            Usuario::setAlerta('exito', 'Cuenta Comprobada Correctamente');
+            Usuario::setAlerta('exito', 'Usuario confirmado');
+            // ...
+        } else {
+            // Manejar el caso en que $usuarioArray no sea un array válido
+            Usuario::setAlerta('error', 'Usuario no encontrado');
         }
+
        
         // Obtener alertas
         $alertas = Usuario::getAlertas();
